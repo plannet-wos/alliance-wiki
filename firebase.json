@@ -1,0 +1,17 @@
+{
+  "hosting": {
+    "site": "alliance-wiki",
+    "public": "dist/alliance-wiki/browser",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}

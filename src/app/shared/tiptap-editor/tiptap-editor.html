@@ -1,0 +1,46 @@
+<div class="editor-wrapper">
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <button mat-icon-button (click)="undo()" matTooltip="Undo"><mat-icon>undo</mat-icon></button>
+    <button mat-icon-button (click)="redo()" matTooltip="Redo"><mat-icon>redo</mat-icon></button>
+
+    <mat-divider vertical></mat-divider>
+
+    <button mat-icon-button (click)="setH(1)" [class.active]="isActive('heading', {level:1})" matTooltip="Heading 1"><mat-icon>looks_one</mat-icon></button>
+    <button mat-icon-button (click)="setH(2)" [class.active]="isActive('heading', {level:2})" matTooltip="Heading 2"><mat-icon>looks_two</mat-icon></button>
+    <button mat-icon-button (click)="setH(3)" [class.active]="isActive('heading', {level:3})" matTooltip="Heading 3"><mat-icon>looks_3</mat-icon></button>
+
+    <mat-divider vertical></mat-divider>
+
+    <button mat-icon-button (click)="toggleBold()"       [class.active]="isActive('bold')"       matTooltip="Bold"><mat-icon>format_bold</mat-icon></button>
+    <button mat-icon-button (click)="toggleItalic()"     [class.active]="isActive('italic')"     matTooltip="Italic"><mat-icon>format_italic</mat-icon></button>
+    <button mat-icon-button (click)="toggleStrike()"     [class.active]="isActive('strike')"     matTooltip="Strikethrough"><mat-icon>strikethrough_s</mat-icon></button>
+    <button mat-icon-button (click)="toggleCode()"       [class.active]="isActive('code')"       matTooltip="Inline code"><mat-icon>code</mat-icon></button>
+
+    <mat-divider vertical></mat-divider>
+
+    <button mat-icon-button (click)="toggleBullet()"     [class.active]="isActive('bulletList')"  matTooltip="Bullet list"><mat-icon>format_list_bulleted</mat-icon></button>
+    <button mat-icon-button (click)="toggleOrdered()"    [class.active]="isActive('orderedList')" matTooltip="Numbered list"><mat-icon>format_list_numbered</mat-icon></button>
+    <button mat-icon-button (click)="toggleBlockquote()" [class.active]="isActive('blockquote')"  matTooltip="Blockquote"><mat-icon>format_quote</mat-icon></button>
+    <button mat-icon-button (click)="toggleCodeBlock()"  [class.active]="isActive('codeBlock')"   matTooltip="Code block"><mat-icon>integration_instructions</mat-icon></button>
+    <button mat-icon-button (click)="setHr()"                                                      matTooltip="Divider"><mat-icon>horizontal_rule</mat-icon></button>
+
+    <mat-divider vertical></mat-divider>
+
+    <button mat-icon-button (click)="setLink()"          [class.active]="isActive('link')"        matTooltip="Add link"><mat-icon>link</mat-icon></button>
+
+    <!-- Image upload -->
+    <button mat-icon-button matTooltip="Upload image" (click)="imgInput.click()" [disabled]="uploading">
+      <mat-icon>{{ uploading ? 'hourglass_empty' : 'image' }}</mat-icon>
+    </button>
+    <input #imgInput type="file" accept="image/*" hidden (change)="uploadImage($event)">
+
+    <!-- Image by URL -->
+    <button mat-icon-button matTooltip="Insert image by URL" (click)="insertImageByUrl()">
+      <mat-icon>add_photo_alternate</mat-icon>
+    </button>
+  </div>
+
+  <!-- Editor mount point -->
+  <div class="editor-content" #editorEl></div>
+</div>

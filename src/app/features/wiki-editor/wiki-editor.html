@@ -1,0 +1,82 @@
+<div class="editor-container">
+  <div class="editor-header">
+    <button mat-icon-button (click)="cancel()">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <h2>{{ isEdit ? 'Edit Article' : 'New Article' }}</h2>
+    <div class="header-actions">
+      <button mat-stroked-button (click)="saveAsDraft()"
+              [disabled]="!title.trim() || !content.trim() || saving">
+        @if (saving && currentStatus === 'draft') {
+          <mat-spinner diameter="18"></mat-spinner>
+        } @else {
+          <mat-icon>draft</mat-icon>
+        }
+        Save as Draft
+      </button>
+      <button mat-flat-button color="primary" (click)="publish()"
+              [disabled]="!title.trim() || !content.trim() || saving">
+        @if (saving && currentStatus === 'published') {
+          <mat-spinner diameter="18"></mat-spinner>
+        } @else {
+          <mat-icon>publish</mat-icon>
+        }
+        {{ isEdit && currentStatus === 'published' ? 'Update' : 'Publish' }}
+      </button>
+    </div>
+  </div>
+
+  @if (isEdit && currentStatus === 'draft') {
+    <div class="draft-notice">
+      <mat-icon>info</mat-icon>
+      This article is currently a <strong>draft</strong> and not visible to regular users.
+    </div>
+  }
+
+  <!-- Meta fields -->
+  <div class="meta-row">
+    <mat-form-field appearance="outline" class="field-title">
+      <mat-label>Article Title</mat-label>
+      <input matInput [(ngModel)]="title" placeholder="e.g. Phase 2 Strategy Guide">
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="field-short">
+      <mat-label>Category</mat-label>
+      <input matInput [(ngModel)]="category" placeholder="e.g. Strategy">
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="field-short">
+      <mat-label>Author</mat-label>
+      <input matInput [(ngModel)]="authorName" placeholder="Optional">
+    </mat-form-field>
+  </div>
+
+  <!-- Cover image -->
+  <div class="cover-row">
+    @if (coverImage) {
+      <div class="cover-preview">
+        <img [src]="coverImage" alt="Cover">
+        <button mat-icon-button color="warn" class="remove-cover" (click)="removeCover()" title="Remove cover">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    } @else {
+      <button mat-stroked-button (click)="coverInput.click()" [disabled]="coverLoading">
+        @if (coverLoading) { <mat-spinner diameter="18"></mat-spinner> }
+        @else { <mat-icon>upload</mat-icon> }
+        Upload Image
+      </button>
+      <button mat-stroked-button (click)="addCoverByUrl()" [disabled]="coverLoading" style="margin-left:8px">
+        <mat-icon>add_link</mat-icon>
+        Add by URL
+      </button>
+    }
+    <input #coverInput type="file" accept="image/*" hidden (change)="uploadCover($event)">
+  </div>
+
+  <!-- TipTap editor — only mount once content is ready so initialContent is correct -->
+  @if (contentReady) {
+    <app-tiptap-editor
+      [initialContent]="content"
+      (contentChange)="onContentChange($event)">
+    </app-tiptap-editor>
+  }
+</div>

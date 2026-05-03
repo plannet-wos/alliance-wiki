@@ -1,0 +1,93 @@
+<div class="article-container">
+  @if (article) {
+    <div class="article-header">
+      <button mat-icon-button (click)="back()">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div class="header-spacer"></div>
+      @if (isAdmin) {
+        <button mat-stroked-button (click)="edit()">
+          <mat-icon>edit</mat-icon> Edit
+        </button>
+      }
+    </div>
+
+    @if (article.status === 'draft') {
+      <div class="draft-banner">
+        <mat-icon>draft</mat-icon>
+        <span>This article is a <strong>draft</strong> — not visible to regular users.</span>
+      </div>
+    }
+
+    @if (article.coverImage) {
+      <img [src]="article.coverImage" class="cover-image" alt="">
+    }
+
+    <div class="article-body">
+      @if (article.category) {
+        <span class="category-chip">{{ article.category }}</span>
+      }
+      <h1>{{ article.title }}</h1>
+      <p class="article-meta">
+        <span *ngIf="article.authorName">By {{ article.authorName }} &nbsp;·&nbsp;</span>
+        Last updated {{ article.updatedAt | date:'d MMM y' }}
+      </p>
+      <hr class="divider">
+      <div class="prose" [innerHTML]="article.content"></div>
+    </div>
+
+    <!-- ── Feedback Section ─────────────────────────────────────── -->
+    <div class="feedback-section">
+      <hr class="divider">
+
+      @if (!isAdmin) {
+        <!-- Non-admin: submit feedback form -->
+        <div class="feedback-form">
+          <h3 class="feedback-title">
+            <mat-icon>feedback</mat-icon> Leave Feedback
+          </h3>
+          <mat-form-field appearance="outline" class="feedback-field">
+            <mat-label>Your feedback on this article</mat-label>
+            <textarea matInput [(ngModel)]="feedbackText" rows="3"
+                      placeholder="Suggestions, corrections, questions..."></textarea>
+          </mat-form-field>
+          <div class="feedback-actions">
+            <button mat-flat-button color="primary"
+                    (click)="submitFeedback()"
+                    [disabled]="!feedbackText.trim() || submittingFeedback">
+              {{ submittingFeedback ? 'Sending...' : 'Submit Feedback' }}
+            </button>
+          </div>
+        </div>
+      }
+
+      @if (isAdmin) {
+        <!-- Admin: view all feedback -->
+        <div class="feedback-list">
+          <h3 class="feedback-title">
+            <mat-icon>rate_review</mat-icon> Reader Feedback
+          </h3>
+          <ng-container *ngIf="feedback$ | async as feedbackItems">
+            @if (feedbackItems.length === 0) {
+              <p class="no-feedback">No feedback yet on this article.</p>
+            } @else {
+              @for (item of feedbackItems; track item.id) {
+                <div class="feedback-item">
+                  <p class="feedback-content">{{ item.content }}</p>
+                  <span class="feedback-date">{{ item.createdAt | date:'d MMM y, HH:mm' }}</span>
+                </div>
+              }
+            }
+          </ng-container>
+        </div>
+      }
+    </div>
+
+  } @else {
+    <div class="not-found">
+      <mat-icon>error_outline</mat-icon>
+      <p>Article not found.</p>
+      <button mat-stroked-button (click)="back()">Back to Wiki</button>
+    </div>
+  }
+</div>

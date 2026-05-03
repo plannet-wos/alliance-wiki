@@ -1,0 +1,70 @@
+<div class="list-container">
+  <div class="list-header">
+    <button mat-icon-button routerLink="/wiki" class="back-btn">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <h2>Wiki</h2>
+    <div class="header-actions">
+      @if (isAdmin) {
+        <button mat-flat-button color="primary" (click)="newArticle()">
+          <mat-icon>add</mat-icon> New Article
+        </button>
+        <button mat-stroked-button (click)="openAdminFeedback()" title="Submit feedback to superadmin">
+          <mat-icon>feedback</mat-icon> Feedback
+        </button>
+      }
+      <button mat-icon-button (click)="toggleAdmin()" [title]="isAdmin ? 'Exit admin' : 'Admin login'">
+        <mat-icon>{{ isAdmin ? 'lock_open' : 'lock' }}</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <ng-container *ngIf="articles$ | async as articles">
+    @if (articles.length === 0) {
+      <div class="empty-state">
+        <mat-icon>menu_book</mat-icon>
+        <p>No articles yet.</p>
+        @if (isAdmin) {
+          <button mat-stroked-button color="primary" (click)="newArticle()">
+            Create the first article
+          </button>
+        }
+      </div>
+    } @else {
+      <div class="article-grid">
+        @for (article of articles; track article.id) {
+          <mat-card class="article-card" [class.draft-card]="article.status === 'draft'" (click)="openArticle(article.id)">
+            @if (article.coverImage) {
+              <img [src]="article.coverImage" class="article-cover" alt="">
+            }
+            <mat-card-content>
+              <div class="card-chips">
+                @if (article.category) {
+                  <span class="category-chip">{{ article.category }}</span>
+                }
+                @if (isAdmin && article.status === 'draft') {
+                  <span class="draft-badge">DRAFT</span>
+                }
+              </div>
+              <h3 class="article-title">{{ article.title }}</h3>
+              <p class="article-meta">
+                <span *ngIf="article.authorName">By {{ article.authorName }} &nbsp;·&nbsp;</span>
+                {{ article.updatedAt | date:'d MMM y' }}
+              </p>
+            </mat-card-content>
+            @if (isAdmin) {
+              <mat-card-actions class="card-actions" (click)="$event.stopPropagation()">
+                <button mat-icon-button (click)="editArticle(article.id, $event)" title="Edit">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button mat-icon-button color="warn" (click)="deleteArticle(article.id, $event)" title="Delete">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </mat-card-actions>
+            }
+          </mat-card>
+        }
+      </div>
+    }
+  </ng-container>
+</div>

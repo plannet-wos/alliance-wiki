@@ -1,0 +1,64 @@
+<div class="home-container">
+  <div class="home-heading">
+    <mat-icon>menu_book</mat-icon>
+    <h1>Alliance Wiki</h1>
+    <p>Select your alliance to browse guides</p>
+  </div>
+
+  <div class="alliance-grid">
+    <ng-container *ngIf="alliances$ | async as alliances">
+      @for (alliance of alliances; track alliance.id) {
+        <mat-card class="alliance-card" (click)="open(alliance.id)">
+          <mat-card-content>
+            <mat-icon>shield</mat-icon>
+            <span class="alliance-name">{{ alliance.name }}</span>
+          </mat-card-content>
+        </mat-card>
+      }
+      @if (alliances.length === 0) {
+        <p class="empty">No alliances found.</p>
+      }
+    </ng-container>
+  </div>
+
+  <!-- Superadmin toolbar -->
+  <div class="superadmin-bar">
+    @if (isSuperAdmin) {
+      <button mat-stroked-button class="superadmin-btn" (click)="toggleFeedbackPanel()">
+        <mat-icon>rate_review</mat-icon>
+        {{ showFeedback ? 'Hide Feedback' : 'View Admin Feedback' }}
+      </button>
+      <button mat-stroked-button class="superadmin-btn" (click)="toggleSuperAdmin()">
+        <mat-icon>lock_open</mat-icon> Exit Superadmin
+      </button>
+    } @else {
+      <button mat-icon-button class="superadmin-icon-btn" (click)="toggleSuperAdmin()" title="Superadmin login">
+        <mat-icon>admin_panel_settings</mat-icon>
+      </button>
+    }
+  </div>
+
+  <!-- Admin feedback panel (superadmin only) -->
+  @if (isSuperAdmin && showFeedback) {
+    <div class="feedback-panel">
+      <h3 class="feedback-panel-title">
+        <mat-icon>feedback</mat-icon> Admin Feedback
+      </h3>
+      <ng-container *ngIf="adminFeedback$ | async as items">
+        @if (items.length === 0) {
+          <p class="no-feedback">No admin feedback submitted yet.</p>
+        } @else {
+          @for (item of items; track item.id) {
+            <div class="feedback-item">
+              <div class="feedback-meta">
+                <span class="alliance-tag">{{ item.allianceId }}</span>
+                <span class="feedback-date">{{ item.createdAt | date:'d MMM y, HH:mm' }}</span>
+              </div>
+              <p class="feedback-content">{{ item.content }}</p>
+            </div>
+          }
+        }
+      </ng-container>
+    </div>
+  }
+</div>

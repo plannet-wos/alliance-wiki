@@ -1,0 +1,93 @@
+.editor-wrapper {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 6px 8px;
+  background: #fafafa;
+  border-bottom: 1px solid #e0e0e0;
+
+  button.active {
+    background: #e8eaf6;
+    color: #3949ab;
+  }
+
+  mat-divider {
+    height: 24px;
+    margin: 0 4px;
+    align-self: center;
+  }
+}
+
+.editor-content {
+  padding: 16px 20px;
+  min-height: 300px;
+  cursor: text;
+
+  // TipTap ProseMirror styles
+  :global(.ProseMirror) {
+    outline: none;
+    min-height: 260px;
+
+    p { margin: 0 0 1em; line-height: 1.7; }
+
+    h1, h2, h3 { font-weight: 700; margin: 1.2em 0 0.5em; }
+    h1 { font-size: 1.8rem; }
+    h2 { font-size: 1.4rem; }
+    h3 { font-size: 1.1rem; }
+
+    ul, ol { padding-left: 1.5em; margin: 0 0 1em; }
+    li { margin-bottom: 4px; }
+
+    blockquote {
+      border-left: 4px solid #e0e0e0;
+      padding-left: 16px;
+      margin: 1em 0;
+      color: #666;
+      font-style: italic;
+    }
+
+    code {
+      background: #f5f5f5;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 0.9em;
+    }
+
+    pre {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 16px;
+      border-radius: 6px;
+      overflow-x: auto;
+      margin: 1em 0;
+
+      code { background: none; padding: 0; color: inherit; }
+    }
+
+    hr { border: none; border-top: 2px solid #e0e0e0; margin: 1.5em 0; }
+
+    img {
+      max-width: 100%;
+      border-radius: 6px;
+      margin: 8px 0;
+    }
+
+    a { color: #1565c0; text-decoration: underline; }
+
+    p.is-editor-empty:first-child::before {
+      content: attr(data-placeholder);
+      color: #aaa;
+      pointer-events: none;
+      float: left;
+      height: 0;
+    }
+  }
+}

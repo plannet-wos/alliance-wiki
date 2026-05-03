@@ -1,0 +1,159 @@
+.home-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  background: linear-gradient(160deg, #0d1b2a 0%, #1a3a5c 100%);
+}
+
+.home-heading {
+  text-align: center;
+  color: white;
+  margin-bottom: 48px;
+
+  mat-icon {
+    font-size: 56px;
+    width: 56px;
+    height: 56px;
+    opacity: 0.85;
+    margin-bottom: 16px;
+  }
+
+  h1 {
+    font-size: 2.4rem;
+    font-weight: 700;
+    margin: 0 0 12px;
+  }
+
+  p {
+    opacity: 0.6;
+    font-size: 1rem;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+}
+
+.alliance-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+  max-width: 800px;
+}
+
+.alliance-card {
+  width: 200px;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.25);
+  }
+
+  mat-card-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 16px !important;
+
+    mat-icon { color: #1565c0; }
+  }
+}
+
+.alliance-name { font-weight: 600; font-size: 15px; }
+.empty { color: rgba(255,255,255,0.5); font-style: italic; }
+
+// ── Superadmin ─────────────────────────────────────────────────────────────
+
+.superadmin-bar {
+  margin-top: 40px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+}
+
+.superadmin-btn {
+  color: rgba(255,255,255,0.6) !important;
+  border-color: rgba(255,255,255,0.2) !important;
+  font-size: 13px;
+
+  &:hover { color: white !important; border-color: rgba(255,255,255,0.5) !important; }
+}
+
+.superadmin-icon-btn {
+  color: rgba(255,255,255,0.25) !important;
+  &:hover { color: rgba(255,255,255,0.6) !important; }
+}
+
+.feedback-panel {
+  margin-top: 32px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 700px;
+  width: 100%;
+}
+
+.feedback-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 20px;
+
+  mat-icon { font-size: 20px; height: 20px; width: 20px; }
+}
+
+.no-feedback {
+  color: rgba(255,255,255,0.4);
+  font-size: 14px;
+  text-align: center;
+  margin: 20px 0;
+}
+
+.feedback-item {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+
+  .feedback-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .alliance-tag {
+    background: rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.8);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .feedback-date {
+    font-size: 11px;
+    color: rgba(255,255,255,0.35);
+  }
+
+  .feedback-content {
+    color: rgba(255,255,255,0.75);
+    font-size: 14px;
+    line-height: 1.6;
+    margin: 0;
+    white-space: pre-wrap;
+  }
+}

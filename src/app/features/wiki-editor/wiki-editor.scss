@@ -1,0 +1,74 @@
+.editor-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.editor-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  h2 { margin: 0; flex-grow: 1; }
+
+  mat-spinner { display: inline-block; }
+
+  .header-actions {
+    display: flex;
+    gap: 8px;
+  }
+}
+
+.draft-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #fff8e1;
+  border: 1px solid #ffe082;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #6d4c00;
+
+  mat-icon { font-size: 18px; height: 18px; width: 18px; }
+}
+
+.meta-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+
+  .field-title { flex: 2; min-width: 200px; }
+  .field-short { flex: 1; min-width: 140px; }
+}
+
+.cover-row { display: flex; align-items: center; }
+
+.cover-preview {
+  position: relative;
+  display: inline-block;
+
+  img {
+    max-height: 200px;
+    max-width: 100%;
+    border-radius: 8px;
+    display: block;
+    object-fit: cover;
+  }
+
+  .remove-cover {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: rgba(0,0,0,0.5);
+    color: white;
+  }
+}
+
+@media (max-width: 600px) {
+  .editor-container { padding: 16px; }
+  .meta-row { flex-direction: column; gap: 0; }
+}

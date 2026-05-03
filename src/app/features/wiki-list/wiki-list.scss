@@ -1,0 +1,120 @@
+.list-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.list-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 32px;
+
+  h2 { margin: 0; flex-grow: 1; font-size: 1.8rem; }
+}
+
+.back-btn { color: #555; }
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.article-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+}
+
+.article-card {
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  overflow: hidden;
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  }
+}
+
+.article-cover {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  display: block;
+}
+
+.draft-card {
+  opacity: 0.75;
+  border: 2px dashed #ffa726 !important;
+}
+
+.card-chips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.category-chip {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  background: #e8eaf6;
+  color: #3949ab;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.draft-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: #fff3e0;
+  color: #e65100;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid #ffcc80;
+}
+
+.article-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 8px;
+  line-height: 1.4;
+}
+
+.article-meta {
+  font-size: 12px;
+  color: #888;
+  margin: 0;
+}
+
+.card-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 8px 8px;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 80px 0;
+  color: #aaa;
+
+  mat-icon { font-size: 64px; width: 64px; height: 64px; }
+  p { font-size: 1.1rem; margin: 0; }
+}
+
+@media (max-width: 600px) {
+  .list-container { padding: 16px; }
+  .article-grid   { grid-template-columns: 1fr; }
+}
