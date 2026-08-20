@@ -48,6 +48,7 @@ import { Article } from '../../core/models/article.model';
 export class AdminLoginDialog {
   private ref            = inject<MatDialogRef<AdminLoginDialog>>(MatDialogRef);
   private articleService = inject(ArticleService);
+  private cdr             = inject(ChangeDetectorRef);
   data                   = inject<{ allianceId: string }>(MAT_DIALOG_DATA);
 
   username = '';
@@ -67,6 +68,10 @@ export class AdminLoginDialog {
     } else {
       this.error    = true;
       this.password = '';
+      // Zoneless: nothing schedules a re-render after an await resolves on
+      // its own — without this, a wrong password leaves the dialog stuck
+      // showing "Checking..." forever even though this.error is now true.
+      this.cdr.detectChanges();
     }
   }
 }
@@ -99,6 +104,7 @@ export class AdminLoginDialog {
 export class AdminFeedbackDialog {
   private ref            = inject<MatDialogRef<AdminFeedbackDialog>>(MatDialogRef);
   private articleService = inject(ArticleService);
+  private cdr             = inject(ChangeDetectorRef);
   data                   = inject<{ allianceId: string }>(MAT_DIALOG_DATA);
 
   content = '';
@@ -120,6 +126,7 @@ export class AdminFeedbackDialog {
       this.error = true;
     }
     this.loading = false;
+    this.cdr.detectChanges(); // zoneless — see AdminLoginDialog.submit()
   }
 }
 

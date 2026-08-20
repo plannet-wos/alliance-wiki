@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { wikiAdminGuard } from './core/guards/wiki-admin.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'wiki', pathMatch: 'full' },
@@ -12,11 +13,13 @@ export const routes: Routes = [
   },
   {
     path: 'wiki/:allianceId/new',
-    loadComponent: () => import('./features/wiki-editor/wiki-editor').then(m => m.WikiEditor)
+    loadComponent: () => import('./features/wiki-editor/wiki-editor').then(m => m.WikiEditor),
+    canActivate: [wikiAdminGuard]
   },
   {
     path: 'wiki/:allianceId/edit/:articleId',
-    loadComponent: () => import('./features/wiki-editor/wiki-editor').then(m => m.WikiEditor)
+    loadComponent: () => import('./features/wiki-editor/wiki-editor').then(m => m.WikiEditor),
+    canActivate: [wikiAdminGuard]
   },
   {
     path: 'wiki/:allianceId/article/:articleId',

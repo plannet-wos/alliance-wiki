@@ -48,6 +48,7 @@ interface Alliance { id: string; name: string; }
 export class SuperadminLoginDialog {
   private ref            = inject<MatDialogRef<SuperadminLoginDialog>>(MatDialogRef);
   private articleService = inject(ArticleService);
+  private cdr             = inject(ChangeDetectorRef);
 
   username = '';
   password = '';
@@ -66,6 +67,9 @@ export class SuperadminLoginDialog {
     } else {
       this.error    = true;
       this.password = '';
+      // Zoneless: see AdminLoginDialog.submit() in wiki-list.ts for why
+      // this is needed — nothing else re-renders after the await settles.
+      this.cdr.detectChanges();
     }
   }
 }
