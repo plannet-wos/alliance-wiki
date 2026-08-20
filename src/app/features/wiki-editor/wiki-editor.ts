@@ -72,6 +72,7 @@ export class WikiEditor implements OnInit {
   coverLoading = false;
   contentReady = false;
   currentStatus: 'published' | 'draft' = 'published';
+  private originalCreatedAt: number | null = null;
 
   async ngOnInit() {
     this.allianceId = this.route.snapshot.paramMap.get('allianceId')!;
@@ -81,12 +82,13 @@ export class WikiEditor implements OnInit {
     if (this.isEdit && this.articleId) {
       const article = await this.articleService.getArticle(this.articleId);
       if (article) {
-        this.title         = article.title;
-        this.category      = article.category  ?? '';
-        this.authorName    = article.authorName ?? '';
-        this.content       = article.content;
-        this.coverImage    = article.coverImage ?? '';
-        this.currentStatus = article.status ?? 'published';
+        this.title              = article.title;
+        this.category           = article.category  ?? '';
+        this.authorName         = article.authorName ?? '';
+        this.content            = article.content;
+        this.coverImage         = article.coverImage ?? '';
+        this.currentStatus      = article.status ?? 'published';
+        this.originalCreatedAt  = article.createdAt;
       }
     }
     this.contentReady = true;
@@ -140,11 +142,11 @@ export class WikiEditor implements OnInit {
         allianceId:  this.allianceId,
         title:       this.title.trim(),
         content:     this.content,
-        category:    this.category.trim()   || undefined,
-        authorName:  this.authorName.trim() || undefined,
-        coverImage:  this.coverImage        || undefined,
+        category:    this.category.trim()   || null,
+        authorName:  this.authorName.trim() || null,
+        coverImage:  this.coverImage        || null,
         status,
-        createdAt:   this.isEdit ? 0 : now,   // preserved on edit via merge
+        createdAt:   this.isEdit ? (this.originalCreatedAt ?? now) : now,
         updatedAt:   now
       };
       await this.articleService.saveArticle(article);

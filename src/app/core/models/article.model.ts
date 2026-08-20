@@ -3,9 +3,9 @@ export interface Article {
   allianceId: string;
   title: string;
   content: string;       // HTML from TipTap
-  coverImage?: string;   // Firebase Storage URL
-  category?: string;
-  authorName?: string;
+  coverImage?: string | null;   // Firebase Storage URL
+  category?: string | null;
+  authorName?: string | null;
   status: 'published' | 'draft';
   createdAt: number;
   updatedAt: number;
