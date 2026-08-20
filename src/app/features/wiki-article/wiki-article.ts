@@ -9,9 +9,8 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { FormsModule } from '@angular/forms';
 import { Observable } from 'rxjs';
 import { ArticleService } from '../../core/services/article.service';
+import { AdminSessionService } from '../../core/services/admin-session.service';
 import { Article, ArticleFeedback } from '../../core/models/article.model';
-
-const ADMIN_KEY = 'fw_admin';
 
 @Component({
   selector: 'app-wiki-article',
@@ -26,6 +25,7 @@ const ADMIN_KEY = 'fw_admin';
 })
 export class WikiArticle implements OnInit {
   private articleService = inject(ArticleService);
+  private adminSession   = inject(AdminSessionService);
   private route          = inject(ActivatedRoute);
   private router         = inject(Router);
   private snackBar       = inject(MatSnackBar);
@@ -43,7 +43,7 @@ export class WikiArticle implements OnInit {
   async ngOnInit() {
     this.allianceId      = this.route.snapshot.paramMap.get('allianceId')!;
     const articleId      = this.route.snapshot.paramMap.get('articleId')!;
-    this.isAdmin         = sessionStorage.getItem(ADMIN_KEY) === this.allianceId;
+    this.isAdmin         = this.adminSession.canAdminister(this.allianceId);
 
     const article = await this.articleService.getArticle(articleId);
 
