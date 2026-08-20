@@ -1,11 +1,12 @@
 import { Injectable, inject } from '@angular/core';
 import {
   Firestore, collection, collectionData, doc,
-  setDoc, deleteDoc, getDoc, getDocs, query, where, orderBy
+  setDoc, deleteDoc, getDoc, query, where, orderBy, serverTimestamp
 } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
 import { Article, ArticleFeedback, AdminFeedback } from '../models/article.model';
 import { environment } from '../../../environments/environment';
+import { deriveSaltHex, hashPassword, withLoginTimeout } from '../utils/password.util';
 
 @Injectable({ providedIn: 'root' })
 export class ArticleService {
@@ -31,26 +32,45 @@ export class ArticleService {
     await deleteDoc(doc(this.firestore, `wiki_articles/${id}`));
   }
 
+  // Accounts are unreadable by design (see firestore.rules) — a stolen or
+  // misconfigured read of the collection must never expose credentials, and
+  // there's no backend here to check them out-of-band. So "login" isn't a
+  // read-and-compare: it's an attempted write that only succeeds if every
+  // field — crucially including passwordHash — exactly matches what's
+  // already stored. Firestore rules require the write to touch nothing but
+  // `lastLoginAt`; get any field wrong (wrong password → wrong hash, wrong
+  // alliance, wrong username) and the whole write is rejected as
+  // permission-denied, which we treat as "incorrect credentials."
   async authenticate(username: string, password: string, allianceId: string): Promise<boolean> {
-    const q = query(
-      collection(this.firestore, 'accounts'),
-      where('username', '==', username),
-      where('password', '==', password),
-      where('allianceId', '==', allianceId)
-    );
-    const snap = await getDocs(q);
-    return !snap.empty;
+    try {
+      const passwordHash = await hashPassword(password, await deriveSaltHex(username));
+      await withLoginTimeout(setDoc(doc(this.firestore, `accounts/${username}`), {
+        id: username,
+        username,
+        allianceId,
+        passwordHash,
+        lastLoginAt: serverTimestamp()
+      }));
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   async authenticateSuperAdmin(username: string, password: string): Promise<boolean> {
-    const q = query(
-      collection(this.firestore, 'accounts'),
-      where('username', '==', username),
-      where('password', '==', password),
-      where('role', '==', 'superadmin')
-    );
-    const snap = await getDocs(q);
-    return !snap.empty;
+    try {
+      const passwordHash = await hashPassword(password, await deriveSaltHex(username));
+      await withLoginTimeout(setDoc(doc(this.firestore, `accounts/${username}`), {
+        id: username,
+        username,
+        role: 'superadmin',
+        passwordHash,
+        lastLoginAt: serverTimestamp()
+      }));
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   async uploadImage(file: File): Promise<string> {

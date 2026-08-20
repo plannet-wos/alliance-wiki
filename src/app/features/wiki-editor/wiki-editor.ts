@@ -158,6 +158,7 @@ export class WikiEditor implements OnInit {
       this.snackBar.open('Failed to save', 'Close', { duration: 3000 });
     }
     this.saving = false;
+    this.cdr.detectChanges(); // zoneless — see AdminLoginDialog.submit() in wiki-list.ts
   }
 
   cancel() {
