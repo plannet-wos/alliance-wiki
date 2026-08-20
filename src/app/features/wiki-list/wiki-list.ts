@@ -13,9 +13,8 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { FormsModule } from '@angular/forms';
 import { Observable, map } from 'rxjs';
 import { ArticleService } from '../../core/services/article.service';
+import { AdminSessionService } from '../../core/services/admin-session.service';
 import { Article } from '../../core/models/article.model';
-
-const ADMIN_KEY = 'fw_admin';
 
 // ── Inline admin-login dialog ────────────────────────────────────────────────
 @Component({
@@ -138,6 +137,7 @@ export class AdminFeedbackDialog {
 })
 export class WikiList implements OnInit {
   private articleService = inject(ArticleService);
+  private adminSession   = inject(AdminSessionService);
   private route          = inject(ActivatedRoute);
   private router         = inject(Router);
   private dialog         = inject(MatDialog);
@@ -150,7 +150,7 @@ export class WikiList implements OnInit {
 
   ngOnInit() {
     this.allianceId = this.route.snapshot.paramMap.get('allianceId')!;
-    this.isAdmin    = sessionStorage.getItem(ADMIN_KEY) === this.allianceId;
+    this.isAdmin    = this.adminSession.canAdminister(this.allianceId);
     this._loadArticles();
   }
 
@@ -194,14 +194,16 @@ export class WikiList implements OnInit {
 
   toggleAdmin() {
     if (this.isAdmin) {
-      sessionStorage.removeItem(ADMIN_KEY);
-      this.isAdmin = false;
+      this.adminSession.logoutAllianceAdmin();
+      // Superadmin sessions aren't cleared by this per-alliance toggle —
+      // exiting superadmin happens on the wiki home page.
+      this.isAdmin = this.adminSession.canAdminister(this.allianceId);
       this._loadArticles();
     } else {
       const ref = this.dialog.open(AdminLoginDialog, { width: '320px', data: { allianceId: this.allianceId } });
       ref.afterClosed().subscribe((success: boolean) => {
         if (success) {
-          sessionStorage.setItem(ADMIN_KEY, this.allianceId);
+          this.adminSession.loginAllianceAdmin(this.allianceId);
           this.isAdmin = true;
           this._loadArticles();
           this.cdr.detectChanges();

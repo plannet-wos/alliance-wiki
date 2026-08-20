@@ -11,9 +11,8 @@ import { MatInputModule } from '@angular/material/input';
 import { FormsModule } from '@angular/forms';
 import { Observable } from 'rxjs';
 import { ArticleService } from '../../core/services/article.service';
+import { AdminSessionService } from '../../core/services/admin-session.service';
 import { AdminFeedback } from '../../core/models/article.model';
-
-const SUPERADMIN_KEY = 'fw_superadmin';
 
 interface Alliance { id: string; name: string; }
 
@@ -84,6 +83,7 @@ export class WikiHome implements OnInit {
   private router         = inject(Router);
   private dialog         = inject(MatDialog);
   private articleService = inject(ArticleService);
+  private adminSession   = inject(AdminSessionService);
   private cdr            = inject(ChangeDetectorRef);
 
   alliances$!:     Observable<Alliance[]>;
@@ -96,7 +96,7 @@ export class WikiHome implements OnInit {
       collection(this.firestore, 'alliances'), { idField: 'id' }
     ) as Observable<Alliance[]>;
 
-    this.isSuperAdmin = sessionStorage.getItem(SUPERADMIN_KEY) === 'true';
+    this.isSuperAdmin = this.adminSession.isSuperAdmin();
     if (this.isSuperAdmin) {
       this.adminFeedback$ = this.articleService.getAllAdminFeedback();
     }
@@ -108,7 +108,7 @@ export class WikiHome implements OnInit {
 
   toggleSuperAdmin() {
     if (this.isSuperAdmin) {
-      sessionStorage.removeItem(SUPERADMIN_KEY);
+      this.adminSession.logoutSuperAdmin();
       this.isSuperAdmin   = false;
       this.adminFeedback$ = null;
       this.showFeedback   = false;
@@ -116,7 +116,7 @@ export class WikiHome implements OnInit {
       const ref = this.dialog.open(SuperadminLoginDialog, { width: '320px' });
       ref.afterClosed().subscribe((success: boolean) => {
         if (success) {
-          sessionStorage.setItem(SUPERADMIN_KEY, 'true');
+          this.adminSession.loginSuperAdmin();
           this.isSuperAdmin   = true;
           this.adminFeedback$ = this.articleService.getAllAdminFeedback();
           this.cdr.detectChanges();
