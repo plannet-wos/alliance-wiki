@@ -10,11 +10,14 @@ import { allianceId } from '../models/alliance.model';
  * trade-off, not an oversight). This guard only keeps the in-app experience consistent — it
  * stops a non-admin browser from landing on the editor via a typed/guessed URL, nothing more.
  */
-export const wikiAdminGuard: CanActivateFn = (route) => {
+export const wikiAdminGuard: CanActivateFn = async (route) => {
   const auth = inject(AuthService);
   const router = inject(Router);
   const stateId = route.paramMap.get('stateId')!;
   const allianceSlug = route.paramMap.get('allianceSlug')!;
+  // See AuthService.whenReady()'s doc comment — without this, a genuinely signed-in admin
+  // navigating here right after login (or on a fresh page load) can get wrongly bounced out.
+  await auth.whenReady();
 
   return auth.canAdminister(allianceId(stateId, allianceSlug))
     || router.createUrlTree([stateId, 'wiki', allianceSlug]);

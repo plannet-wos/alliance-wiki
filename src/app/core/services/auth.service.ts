@@ -44,18 +44,54 @@ export class AuthService {
   readonly rank = computed<Rank | null>(() => this._account()?.rank ?? null);
   readonly isSuperAdmin = computed(() => this.isActive() && this.rank() === RANK.SUPERADMIN);
 
+  /**
+   * Resolves once the CURRENT Firebase Auth state — and, if someone's signed in, the first
+   * read of their accounts/{uid} doc — are both known. Route guards await this before
+   * checking isAuthenticated()/isActive()/rank()/canAdminister(): those signals read as
+   * "signed out, no account" for a beat after every auth-state change (a fresh page load
+   * restoring a persisted session is itself async; signing in kicks off a new onSnapshot that
+   * hasn't fired yet either), and a guard reading them synchronously in that window wrongly
+   * bounces a real, signed-in user back to /login. Mirrors plannet-wos's auth.service.ts —
+   * see its fuller doc comment. Safe to call from anywhere, any number of times — each call
+   * just awaits whichever settle-gate is current.
+   */
+  private settledResolve!: () => void;
+  private settledPromise = new Promise<void>((resolve) => { this.settledResolve = resolve; });
+
   constructor() {
-    onAuthStateChanged(this.auth, (user) => {
-      this._user.set(user);
-      this.unsubAccount?.();
-      this.unsubAccount = null;
-      this._account.set(null);
-      if (user) {
-        this.unsubAccount = onSnapshot(doc(this.firestore, `accounts/${user.uid}`), (snap) => {
-          this._account.set(snap.exists() ? (snap.data() as Account) : null);
-        });
-      }
-    });
+    onAuthStateChanged(this.auth, (user) => this.applyUser(user));
+  }
+
+  async whenReady(): Promise<void> {
+    return this.settledPromise;
+  }
+
+  /**
+   * Updates `_user` and (re-)subscribes to the account doc. Called both by onAuthStateChanged
+   * and directly from login()/completeMfaSignIn() — that listener fires asynchronously, so
+   * code that runs right after those resolve could otherwise still see a stale, signed-out
+   * `_user` for a moment. Only the "same real user applied twice" case is a no-op — never
+   * skip a transition to or from signed-out, or the very first call (cold boot with no
+   * persisted session) would wrongly match the signal's own null default and never resolve
+   * settledPromise at all.
+   */
+  private applyUser(user: User | null): void {
+    if (user !== null && user.uid === this._user()?.uid) return;
+
+    this._user.set(user);
+    this.unsubAccount?.();
+    this.unsubAccount = null;
+    this._account.set(null);
+    this.settledPromise = new Promise((resolve) => { this.settledResolve = resolve; });
+
+    if (user) {
+      this.unsubAccount = onSnapshot(doc(this.firestore, `accounts/${user.uid}`), (snap) => {
+        this._account.set(snap.exists() ? (snap.data() as Account) : null);
+        this.settledResolve();
+      });
+    } else {
+      this.settledResolve();
+    }
   }
 
   /** True if the current account can administer this specific alliance's wiki (superadmin, or that alliance's own R4/R5). */
@@ -70,6 +106,7 @@ export class AuthService {
   async login(email: string, password: string): Promise<User> {
     try {
       const cred = await signInWithEmailAndPassword(this.auth, email, password);
+      this.applyUser(cred.user);
       return cred.user;
     } catch (err) {
       if ((err as MultiFactorError)?.code === 'auth/multi-factor-auth-required') {
@@ -84,6 +121,7 @@ export class AuthService {
     if (!hint) throw new Error('No TOTP factor enrolled on this account');
     const assertion = TotpMultiFactorGenerator.assertionForSignIn(hint.uid, otp);
     const cred = await resolver.resolveSignIn(assertion);
+    this.applyUser(cred.user);
     return cred.user;
   }
 
