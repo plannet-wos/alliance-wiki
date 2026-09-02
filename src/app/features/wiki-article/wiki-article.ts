@@ -9,8 +9,9 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { FormsModule } from '@angular/forms';
 import { Observable } from 'rxjs';
 import { ArticleService } from '../../core/services/article.service';
-import { AdminSessionService } from '../../core/services/admin-session.service';
+import { AuthService } from '../../core/services/auth.service';
 import { Article, ArticleFeedback } from '../../core/models/article.model';
+import { allianceId as resolveAllianceId } from '../../core/models/alliance.model';
 
 @Component({
   selector: 'app-wiki-article',
@@ -25,13 +26,15 @@ import { Article, ArticleFeedback } from '../../core/models/article.model';
 })
 export class WikiArticle implements OnInit {
   private articleService = inject(ArticleService);
-  private adminSession   = inject(AdminSessionService);
+  private auth           = inject(AuthService);
   private route          = inject(ActivatedRoute);
   private router         = inject(Router);
   private snackBar       = inject(MatSnackBar);
   private cdr            = inject(ChangeDetectorRef);
 
   article:      Article | null = null;
+  stateId!:     string;
+  allianceSlug!: string;
   allianceId!:  string;
   isAdmin       = false;
 
@@ -41,15 +44,17 @@ export class WikiArticle implements OnInit {
   submittingFeedback  = false;
 
   async ngOnInit() {
-    this.allianceId      = this.route.snapshot.paramMap.get('allianceId')!;
-    const articleId      = this.route.snapshot.paramMap.get('articleId')!;
-    this.isAdmin         = this.adminSession.canAdminister(this.allianceId);
+    this.stateId          = this.route.snapshot.paramMap.get('stateId')!;
+    this.allianceSlug     = this.route.snapshot.paramMap.get('allianceSlug')!;
+    this.allianceId       = resolveAllianceId(this.stateId, this.allianceSlug);
+    const articleId       = this.route.snapshot.paramMap.get('articleId')!;
+    this.isAdmin          = this.auth.canAdminister(this.allianceId);
 
     const article = await this.articleService.getArticle(articleId);
 
     // Draft guard: non-admins cannot access drafts
     if (article && article.status === 'draft' && !this.isAdmin) {
-      this.router.navigate(['/wiki', this.allianceId]);
+      this.router.navigate([this.stateId, 'wiki', this.allianceSlug]);
       return;
     }
 
@@ -63,11 +68,11 @@ export class WikiArticle implements OnInit {
   }
 
   edit() {
-    this.router.navigate(['/wiki', this.allianceId, 'edit', this.article!.id]);
+    this.router.navigate([this.stateId, 'wiki', this.allianceSlug, 'edit', this.article!.id]);
   }
 
   back() {
-    this.router.navigate(['/wiki', this.allianceId]);
+    this.router.navigate([this.stateId, 'wiki', this.allianceSlug]);
   }
 
   async submitFeedback() {

@@ -1,5 +1,6 @@
 import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { toObservable } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -11,70 +12,12 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { FormsModule } from '@angular/forms';
-import { Observable, map } from 'rxjs';
+import { Observable, map, firstValueFrom, filter, timeout, catchError, of } from 'rxjs';
 import { ArticleService } from '../../core/services/article.service';
-import { AdminSessionService } from '../../core/services/admin-session.service';
+import { AuthService } from '../../core/services/auth.service';
+import { LoginDialog } from '../../shared/login-dialog/login-dialog';
 import { Article } from '../../core/models/article.model';
-
-// ── Inline admin-login dialog ────────────────────────────────────────────────
-@Component({
-  selector: 'app-admin-login-dialog',
-  standalone: true,
-  imports: [CommonModule, MatDialogModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatIconModule, FormsModule],
-  template: `
-    <h2 mat-dialog-title>Admin Login</h2>
-    <mat-dialog-content>
-      <mat-form-field appearance="outline" style="width:100%;margin-top:8px">
-        <mat-label>Username</mat-label>
-        <input matInput [(ngModel)]="username" (keydown.enter)="submit()" autofocus>
-      </mat-form-field>
-      <mat-form-field appearance="outline" style="width:100%;margin-top:4px">
-        <mat-label>Password</mat-label>
-        <input matInput [type]="hide ? 'password' : 'text'" [(ngModel)]="password" (keydown.enter)="submit()">
-        <button mat-icon-button matSuffix (click)="hide = !hide" type="button">
-          <mat-icon>{{ hide ? 'visibility_off' : 'visibility' }}</mat-icon>
-        </button>
-      </mat-form-field>
-      <p *ngIf="error" style="color:var(--mat-warn-color,#f44336);margin:0;font-size:13px">Incorrect credentials.</p>
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-      <button mat-button mat-dialog-close>Cancel</button>
-      <button mat-flat-button color="primary" (click)="submit()" [disabled]="loading">
-        {{ loading ? 'Checking...' : 'Login' }}
-      </button>
-    </mat-dialog-actions>
-  `
-})
-export class AdminLoginDialog {
-  private ref            = inject<MatDialogRef<AdminLoginDialog>>(MatDialogRef);
-  private articleService = inject(ArticleService);
-  private cdr             = inject(ChangeDetectorRef);
-  data                   = inject<{ allianceId: string }>(MAT_DIALOG_DATA);
-
-  username = '';
-  password = '';
-  hide     = true;
-  error    = false;
-  loading  = false;
-
-  async submit() {
-    if (!this.username || !this.password) return;
-    this.loading = true;
-    this.error   = false;
-    const ok = await this.articleService.authenticate(this.username, this.password, this.data.allianceId);
-    this.loading = false;
-    if (ok) {
-      this.ref.close(true);
-    } else {
-      this.error    = true;
-      this.password = '';
-      // Zoneless: nothing schedules a re-render after an await resolves on
-      // its own — without this, a wrong password leaves the dialog stuck
-      // showing "Checking..." forever even though this.error is now true.
-      this.cdr.detectChanges();
-    }
-  }
-}
+import { allianceId as resolveAllianceId } from '../../core/models/alliance.model';
 
 // ── Admin feedback dialog ────────────────────────────────────────────────────
 @Component({
@@ -126,7 +69,7 @@ export class AdminFeedbackDialog {
       this.error = true;
     }
     this.loading = false;
-    this.cdr.detectChanges(); // zoneless — see AdminLoginDialog.submit()
+    this.cdr.detectChanges(); // zoneless — see LoginDialog.submit()
   }
 }
 
@@ -144,20 +87,23 @@ export class AdminFeedbackDialog {
 })
 export class WikiList implements OnInit {
   private articleService = inject(ArticleService);
-  private adminSession   = inject(AdminSessionService);
+  protected auth          = inject(AuthService);
   private route          = inject(ActivatedRoute);
   private router         = inject(Router);
   private dialog         = inject(MatDialog);
   private snackBar       = inject(MatSnackBar);
-  private cdr            = inject(ChangeDetectorRef);
 
+  stateId!: string;
+  allianceSlug!: string;
   allianceId!: string;
   articles$!:  Observable<Article[]>;
   isAdmin      = false;
 
   ngOnInit() {
-    this.allianceId = this.route.snapshot.paramMap.get('allianceId')!;
-    this.isAdmin    = this.adminSession.canAdminister(this.allianceId);
+    this.stateId = this.route.snapshot.paramMap.get('stateId')!;
+    this.allianceSlug = this.route.snapshot.paramMap.get('allianceSlug')!;
+    this.allianceId = resolveAllianceId(this.stateId, this.allianceSlug);
+    this.isAdmin = this.auth.canAdminister(this.allianceId);
     this._loadArticles();
   }
 
@@ -173,11 +119,11 @@ export class WikiList implements OnInit {
   }
 
   openArticle(id: string) {
-    this.router.navigate(['/wiki', this.allianceId, 'article', id]);
+    this.router.navigate([this.stateId, 'wiki', this.allianceSlug, 'article', id]);
   }
 
   newArticle() {
-    this.router.navigate(['/wiki', this.allianceId, 'new']);
+    this.router.navigate([this.stateId, 'wiki', this.allianceSlug, 'new']);
   }
 
   async deleteArticle(id: string, event: Event) {
@@ -187,7 +133,7 @@ export class WikiList implements OnInit {
 
   editArticle(id: string, event: Event) {
     event.stopPropagation();
-    this.router.navigate(['/wiki', this.allianceId, 'edit', id]);
+    this.router.navigate([this.stateId, 'wiki', this.allianceSlug, 'edit', id]);
   }
 
   openAdminFeedback() {
@@ -201,20 +147,23 @@ export class WikiList implements OnInit {
 
   toggleAdmin() {
     if (this.isAdmin) {
-      this.adminSession.logoutAllianceAdmin();
-      // Superadmin sessions aren't cleared by this per-alliance toggle —
-      // exiting superadmin happens on the wiki home page.
-      this.isAdmin = this.adminSession.canAdminister(this.allianceId);
+      // There's only one signed-in account now (real Firebase Auth) — no more separate
+      // per-alliance vs. superadmin sessions to toggle independently, so "exit admin" here
+      // just signs out entirely, same as wiki-home's superadmin toggle.
+      this.auth.logout();
+      this.isAdmin = false;
       this._loadArticles();
     } else {
-      const ref = this.dialog.open(AdminLoginDialog, { width: '320px', data: { allianceId: this.allianceId } });
-      ref.afterClosed().subscribe((success: boolean) => {
-        if (success) {
-          this.adminSession.loginAllianceAdmin(this.allianceId);
-          this.isAdmin = true;
-          this._loadArticles();
-          this.cdr.detectChanges();
-        }
+      const ref = this.dialog.open(LoginDialog, { width: '320px' });
+      ref.afterClosed().subscribe(async (success: boolean) => {
+        if (!success) return;
+        await firstValueFrom(toObservable(this.auth.account).pipe(
+          filter((a) => a !== null),
+          timeout(6000),
+          catchError(() => of(null)),
+        ));
+        this.isAdmin = this.auth.canAdminister(this.allianceId);
+        this._loadArticles();
       });
     }
   }

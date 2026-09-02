@@ -12,6 +12,7 @@ import { MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dial
 import { TiptapEditor } from '../../shared/tiptap-editor/tiptap-editor';
 import { ArticleService } from '../../core/services/article.service';
 import { Article } from '../../core/models/article.model';
+import { allianceId as resolveAllianceId } from '../../core/models/alliance.model';
 
 // ── Inline image-URL dialog ──────────────────────────────────────────────────
 @Component({
@@ -59,6 +60,8 @@ export class WikiEditor implements OnInit {
   private dialog         = inject(MatDialog);
   private cdr            = inject(ChangeDetectorRef);
 
+  stateId!: string;
+  allianceSlug!: string;
   allianceId!: string;
   articleId:   string | null = null;
   isEdit       = false;
@@ -75,7 +78,9 @@ export class WikiEditor implements OnInit {
   private originalCreatedAt: number | null = null;
 
   async ngOnInit() {
-    this.allianceId = this.route.snapshot.paramMap.get('allianceId')!;
+    this.stateId = this.route.snapshot.paramMap.get('stateId')!;
+    this.allianceSlug = this.route.snapshot.paramMap.get('allianceSlug')!;
+    this.allianceId = resolveAllianceId(this.stateId, this.allianceSlug);
     this.articleId  = this.route.snapshot.paramMap.get('articleId');
     this.isEdit     = !!this.articleId;
 
@@ -152,7 +157,7 @@ export class WikiEditor implements OnInit {
       await this.articleService.saveArticle(article);
       const msg = status === 'draft' ? 'Saved as draft' : (this.isEdit ? 'Article updated' : 'Article published');
       this.snackBar.open(msg, 'Close', { duration: 2500 });
-      this.router.navigate(['/wiki', this.allianceId, 'article', id]);
+      this.router.navigate([this.stateId, 'wiki', this.allianceSlug, 'article', id]);
     } catch (e) {
       console.error(e);
       this.snackBar.open('Failed to save', 'Close', { duration: 3000 });
@@ -162,6 +167,6 @@ export class WikiEditor implements OnInit {
   }
 
   cancel() {
-    this.router.navigate(['/wiki', this.allianceId]);
+    this.router.navigate([this.stateId, 'wiki', this.allianceSlug]);
   }
 }

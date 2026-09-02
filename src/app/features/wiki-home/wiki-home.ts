@@ -1,80 +1,21 @@
-import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { firstValueFrom, filter, timeout, catchError, of } from 'rxjs';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
-import { Firestore, collection, collectionData } from '@angular/fire/firestore';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Firestore, collection, collectionData, query, where } from '@angular/fire/firestore';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { MatDialogModule, MatDialog, MatDialogRef } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { FormsModule } from '@angular/forms';
 import { Observable } from 'rxjs';
 import { ArticleService } from '../../core/services/article.service';
-import { AdminSessionService } from '../../core/services/admin-session.service';
+import { AuthService } from '../../core/services/auth.service';
+import { LoginDialog } from '../../shared/login-dialog/login-dialog';
 import { AdminFeedback } from '../../core/models/article.model';
+import { Alliance } from '../../core/models/alliance.model';
 
-interface Alliance { id: string; name: string; }
-
-// ── Superadmin login dialog ──────────────────────────────────────────────────
-@Component({
-  selector: 'app-superadmin-login-dialog',
-  standalone: true,
-  imports: [CommonModule, MatDialogModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatIconModule, FormsModule],
-  template: `
-    <h2 mat-dialog-title>Superadmin Login</h2>
-    <mat-dialog-content>
-      <mat-form-field appearance="outline" style="width:100%;margin-top:8px">
-        <mat-label>Username</mat-label>
-        <input matInput [(ngModel)]="username" (keydown.enter)="submit()" autofocus>
-      </mat-form-field>
-      <mat-form-field appearance="outline" style="width:100%;margin-top:4px">
-        <mat-label>Password</mat-label>
-        <input matInput [type]="hide ? 'password' : 'text'" [(ngModel)]="password" (keydown.enter)="submit()">
-        <button mat-icon-button matSuffix (click)="hide = !hide" type="button">
-          <mat-icon>{{ hide ? 'visibility_off' : 'visibility' }}</mat-icon>
-        </button>
-      </mat-form-field>
-      <p *ngIf="error" style="color:var(--mat-warn-color,#f44336);margin:0;font-size:13px">Incorrect credentials.</p>
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-      <button mat-button mat-dialog-close>Cancel</button>
-      <button mat-flat-button color="primary" (click)="submit()" [disabled]="loading">
-        {{ loading ? 'Checking...' : 'Login' }}
-      </button>
-    </mat-dialog-actions>
-  `
-})
-export class SuperadminLoginDialog {
-  private ref            = inject<MatDialogRef<SuperadminLoginDialog>>(MatDialogRef);
-  private articleService = inject(ArticleService);
-  private cdr             = inject(ChangeDetectorRef);
-
-  username = '';
-  password = '';
-  hide     = true;
-  error    = false;
-  loading  = false;
-
-  async submit() {
-    if (!this.username || !this.password) return;
-    this.loading = true;
-    this.error   = false;
-    const ok = await this.articleService.authenticateSuperAdmin(this.username, this.password);
-    this.loading = false;
-    if (ok) {
-      this.ref.close(true);
-    } else {
-      this.error    = true;
-      this.password = '';
-      // Zoneless: see AdminLoginDialog.submit() in wiki-list.ts for why
-      // this is needed — nothing else re-renders after the await settles.
-      this.cdr.detectChanges();
-    }
-  }
-}
-
-// ── Wiki home component ──────────────────────────────────────────────────────
 @Component({
   selector: 'app-wiki-home',
   standalone: true,
@@ -84,46 +25,50 @@ export class SuperadminLoginDialog {
 })
 export class WikiHome implements OnInit {
   private firestore      = inject(Firestore);
+  private route          = inject(ActivatedRoute);
   private router         = inject(Router);
   private dialog         = inject(MatDialog);
   private articleService = inject(ArticleService);
-  private adminSession   = inject(AdminSessionService);
-  private cdr            = inject(ChangeDetectorRef);
+  protected auth         = inject(AuthService);
 
+  stateId!: string;
   alliances$!:     Observable<Alliance[]>;
-  isSuperAdmin     = false;
   adminFeedback$:  Observable<AdminFeedback[]> | null = null;
   showFeedback     = false;
 
   ngOnInit() {
+    this.stateId = this.route.snapshot.paramMap.get('stateId')!;
     this.alliances$ = collectionData(
-      collection(this.firestore, 'alliances'), { idField: 'id' }
+      query(collection(this.firestore, 'alliances'), where('stateId', '==', this.stateId))
     ) as Observable<Alliance[]>;
 
-    this.isSuperAdmin = this.adminSession.isSuperAdmin();
-    if (this.isSuperAdmin) {
+    if (this.auth.isSuperAdmin()) {
       this.adminFeedback$ = this.articleService.getAllAdminFeedback();
     }
   }
 
-  open(allianceId: string) {
-    this.router.navigate(['/wiki', allianceId]);
+  open(alliance: Alliance) {
+    this.router.navigate([this.stateId, 'wiki', alliance.slug]);
   }
 
   toggleSuperAdmin() {
-    if (this.isSuperAdmin) {
-      this.adminSession.logoutSuperAdmin();
-      this.isSuperAdmin   = false;
+    if (this.auth.isSuperAdmin()) {
+      this.auth.logout();
       this.adminFeedback$ = null;
       this.showFeedback   = false;
     } else {
-      const ref = this.dialog.open(SuperadminLoginDialog, { width: '320px' });
-      ref.afterClosed().subscribe((success: boolean) => {
-        if (success) {
-          this.adminSession.loginSuperAdmin();
-          this.isSuperAdmin   = true;
+      const ref = this.dialog.open(LoginDialog, { width: '320px' });
+      ref.afterClosed().subscribe(async (success: boolean) => {
+        if (!success) return;
+        // account() loads asynchronously via an onSnapshot listener — wait for it rather
+        // than checking isSuperAdmin() in the same tick the dialog closes.
+        await firstValueFrom(toObservable(this.auth.account).pipe(
+          filter((a) => a !== null),
+          timeout(6000),
+          catchError(() => of(null)),
+        ));
+        if (this.auth.isSuperAdmin()) {
           this.adminFeedback$ = this.articleService.getAllAdminFeedback();
-          this.cdr.detectChanges();
         }
       });
     }

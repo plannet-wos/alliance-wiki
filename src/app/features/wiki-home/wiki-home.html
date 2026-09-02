@@ -8,7 +8,7 @@
   <div class="alliance-grid">
     <ng-container *ngIf="alliances$ | async as alliances">
       @for (alliance of alliances; track alliance.id) {
-        <mat-card class="alliance-card" (click)="open(alliance.id)">
+        <mat-card class="alliance-card" (click)="open(alliance)">
           <mat-card-content>
             <mat-icon>shield</mat-icon>
             <span class="alliance-name">{{ alliance.name }}</span>
@@ -23,7 +23,7 @@
 
   <!-- Superadmin toolbar -->
   <div class="superadmin-bar">
-    @if (isSuperAdmin) {
+    @if (auth.isSuperAdmin()) {
       <button mat-stroked-button class="superadmin-btn" (click)="toggleFeedbackPanel()">
         <mat-icon>rate_review</mat-icon>
         {{ showFeedback ? 'Hide Feedback' : 'View Admin Feedback' }}
@@ -39,7 +39,7 @@
   </div>
 
   <!-- Admin feedback panel (superadmin only) -->
-  @if (isSuperAdmin && showFeedback) {
+  @if (auth.isSuperAdmin() && showFeedback) {
     <div class="feedback-panel">
       <h3 class="feedback-panel-title">
         <mat-icon>feedback</mat-icon> Admin Feedback
