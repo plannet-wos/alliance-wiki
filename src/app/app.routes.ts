@@ -32,4 +32,15 @@ export const routes: Routes = [
     path: ':stateId/wiki/:allianceSlug/article/:articleId',
     loadComponent: () => import('./features/wiki-article/wiki-article').then(m => m.WikiArticle)
   },
+
+  // --- Legacy redirects (temporary) -----------------------------------------------
+  // Links shared/bookmarked before the multi-state rollout had no :stateId segment.
+  // Redirect to state 3038 rather than 404. Segment counts never collide with the
+  // canonical routes above, so matching stays unambiguous. Remove once this window
+  // has passed.
+  { path: 'wiki', redirectTo: '3038/wiki', pathMatch: 'full' },
+  { path: 'wiki/:allianceId', redirectTo: '3038/wiki/:allianceId', pathMatch: 'full' },
+  { path: 'wiki/:allianceId/new', redirectTo: '3038/wiki/:allianceId/new', pathMatch: 'full' },
+  { path: 'wiki/:allianceId/edit/:articleId', redirectTo: '3038/wiki/:allianceId/edit/:articleId', pathMatch: 'full' },
+  { path: 'wiki/:allianceId/article/:articleId', redirectTo: '3038/wiki/:allianceId/article/:articleId', pathMatch: 'full' },
 ];
