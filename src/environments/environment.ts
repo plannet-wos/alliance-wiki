@@ -1,5 +1,6 @@
 export const environment = {
   production: false,
+  plannetWosUrl: 'https://plannet-wos.web.app',
   cloudinary: {
     cloudName: 'dc2okiac4',
     uploadPreset: 'ml_default'

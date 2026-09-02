@@ -5,6 +5,9 @@
 // uploads during staging verification land there same as prod, which is fine for this.
 export const environment = {
   production: false,
+  // The floating app-switcher FAB reads this — staging must never point back at prod
+  // plannet-wos, see the redirect bug this fixed.
+  plannetWosUrl: 'https://plannet-wos-staging.web.app',
   cloudinary: {
     cloudName: 'dc2okiac4',
     uploadPreset: 'ml_default'
