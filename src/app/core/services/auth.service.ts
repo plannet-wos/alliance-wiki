@@ -125,7 +125,10 @@ export class AuthService {
     if (!this.isActive()) return false;
     const rank = this.rank();
     if (rank === RANK.SUPERADMIN) return true;
-    return (rank === RANK.R4 || rank === RANK.R5) && this.account()?.allianceId === allianceId;
+    // A state_admin counts too, but only for the one alliance they personally lead
+    // (allianceId set on their own state_admin account — see account.model.ts's comment).
+    return (rank === RANK.R4 || rank === RANK.R5 || rank === RANK.STATE_ADMIN)
+      && this.account()?.allianceId === allianceId;
   }
 
   /** Throws MfaRequiredError if the account has TOTP enrolled — catch it and call completeMfaSignIn() with the user's code. */
