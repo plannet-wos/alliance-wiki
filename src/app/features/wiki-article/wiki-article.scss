@@ -57,7 +57,9 @@
 
 // ── Article prose ──────────────────────────────────────────────────────────
 
-.prose {
+// ::ng-deep because article content is injected via [innerHTML], which never gets this
+// component's emulated-encapsulation attribute, so plain nested selectors never matched it.
+:host ::ng-deep .prose {
   font-size: 16px;
   line-height: 1.8;
   color: #212121;
